@@ -70,8 +70,12 @@ app.delete("/api/persons/:id", (req, res) => {
 app.post("/api/persons", (req, res) => {
         // name or number not supplied; return 400 bad request
         if (!(req.body.name || req.body.number)) {
-            res.status(400).end()
+            res.status(400).send("name and number must be supplied")
         } 
+        // person already in the phonebook
+        else if (persons.map(person => person.name.toLowerCase()).includes(req.body.name.toLowerCase())) {
+            res.status(400).send(`person ${req.body.name} already exists`)
+        }
         // parameters ok, process the request
         else {
                 const id = Math.floor(Math.random() * MAX_ID)
@@ -83,7 +87,7 @@ app.post("/api/persons", (req, res) => {
                 persons = persons.concat(newPerson)
 
                 // redirect to create resource
-                res.redirect(201, "/api/persons/:id")
+                res.redirect(201, `/api/persons/${id}`)
         }
 })
 
