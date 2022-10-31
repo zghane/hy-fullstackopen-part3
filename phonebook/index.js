@@ -2,7 +2,7 @@ const express = require("express")
 const app = express()
 
 //const persons = require("./db.json").persons
-const persons = [
+let persons = [
                 { 
                         "name": "Arto Hellas", 
                         "number": "040-123456",
@@ -25,6 +25,7 @@ const persons = [
                 }
         ]
 
+// info page; show number of entries
 app.get("/info", (req, res) => {
         const resString = `
         <p>Phonebook has info for ${persons.length} people</p>
@@ -32,9 +33,11 @@ app.get("/info", (req, res) => {
         `
         res.send(200, resString)
 })
+// get all persons
 app.get("/api/persons", (req, res) => {
         res.json(persons)
 })
+// get a person by id
 app.get("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
         const person = persons.find(person => {
@@ -49,14 +52,15 @@ app.get("/api/persons/:id", (req, res) => {
         }
 })
 
+// delete a person by id
 app.delete("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
-        const person = persons.filter(person => {
+        persons = persons.filter(person => {
                 return person.id !== id
         })
 
         // 204 no content if delete is successful
-        response.status(204).end()
+        res.status(204).end()
 })
 
 const PORT = 3001
