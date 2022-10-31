@@ -1,7 +1,9 @@
 const express = require("express")
+var morgan = require("morgan")
 const app = express()
 
 app.use(express.json())
+app.use(morgan("tiny"))
 
 const MAX_ID = 1000000
 
@@ -90,6 +92,7 @@ app.post("/api/persons", (req, res) => {
                 res.redirect(201, `/api/persons/${id}`)
         }
 })
+
 
 const PORT = 3001
 app.listen(PORT, () => {
