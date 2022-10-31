@@ -1,6 +1,10 @@
 const express = require("express")
 const app = express()
 
+app.use(express.json())
+
+const MAX_ID = 1000000
+
 //const persons = require("./db.json").persons
 let persons = [
                 { 
@@ -61,6 +65,26 @@ app.delete("/api/persons/:id", (req, res) => {
 
         // 204 no content if delete is successful
         res.status(204).end()
+})
+// create new person with random id
+app.post("/api/persons", (req, res) => {
+        // name or number not supplied; return 400 bad request
+        if (!(req.body.name || req.body.number)) {
+            res.status(400).end()
+        } 
+        // parameters ok, process the request
+        else {
+                const id = Math.floor(Math.random() * MAX_ID)
+                const newPerson = {
+                        "name": req.body.name,
+                        "number": req.body.number,
+                        "id": id
+                }
+                persons = persons.concat(newPerson)
+
+                // redirect to create resource
+                res.redirect(201, "/api/persons/:id")
+        }
 })
 
 const PORT = 3001
