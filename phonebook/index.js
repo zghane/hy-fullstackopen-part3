@@ -1,4 +1,4 @@
-const express = require('express')
+const express = require("express")
 const app = express()
 
 //const persons = require("./db.json").persons
@@ -25,10 +25,10 @@ const persons = [
                 }
         ]
 
-app.get('/api/persons', (req, res) => {
+app.get("/api/persons", (req, res) => {
         res.json(persons)
 })
-app.get('/api/persons/:id', (req, res) => {
+app.get("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
         const person = persons.find(person => {
                 return person.id === id
@@ -42,7 +42,7 @@ app.get('/api/persons/:id', (req, res) => {
         }
 })
 
-app.delete('/api/persons/:id', (req, res) => {
+app.delete("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
         const person = persons.filter(person => {
                 return person.id !== id
