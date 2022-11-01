@@ -1,3 +1,4 @@
+require("dotenv").config()
 const express = require("express")
 var morgan = require("morgan")
 const app = express()
