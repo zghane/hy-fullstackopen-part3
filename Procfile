@@ -1,1 +1,1 @@
-web: npm start --prefix phonebook/
+web: npm start
