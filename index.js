@@ -1,6 +1,7 @@
 require("dotenv").config()
 const express = require("express")
 var morgan = require("morgan")
+const Person = require("./models/person")
 const app = express()
 
 app.use(express.json())
@@ -45,14 +46,13 @@ app.get("/info", (req, res) => {
 })
 // get all persons
 app.get("/api/persons", (req, res) => {
+	const persons = Person.find({})
         res.json(persons)
 })
 // get a person by id
 app.get("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
-        const person = persons.find(person => {
-                return person.id === id
-        })
+	const person = Person.find({id: id})
 
         if (person) {
                 res.json(person)
@@ -65,9 +65,7 @@ app.get("/api/persons/:id", (req, res) => {
 // delete a person by id
 app.delete("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
-        persons = persons.filter(person => {
-                return person.id !== id
-        })
+	Person.deleteOne({_id: id})
 
         // 204 no content if delete is successful
         res.status(204).end()
@@ -79,7 +77,7 @@ app.post("/api/persons", (req, res) => {
             res.status(400).send("name and number must be supplied")
         } 
         // person already in the phonebook
-        else if (persons.map(person => person.name.toLowerCase()).includes(req.body.name.toLowerCase())) {
+        else if (Person.find({name: {"$regex": req.body.name, "$options": "i"}})) {
             res.status(400).send(`person ${req.body.name} already exists`)
         }
         // parameters ok, process the request
@@ -90,7 +88,7 @@ app.post("/api/persons", (req, res) => {
                         "number": req.body.number,
                         "id": id
                 }
-                persons = persons.concat(newPerson)
+		Person.save(newPerson)
 
                 res.status(200).send(newPerson)
                 // redirect to created resource
