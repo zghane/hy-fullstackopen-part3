@@ -3,6 +3,7 @@ var morgan = require("morgan")
 const app = express()
 
 app.use(express.json())
+app.use(express.static("build"))
 // customize log messages
 // method : url : status : content length : response time : request body
 morgan.token("body", (req, res) => JSON.stringify(req.body))
@@ -90,8 +91,10 @@ app.post("/api/persons", (req, res) => {
                 }
                 persons = persons.concat(newPerson)
 
-                // redirect to create resource
-                res.redirect(201, `/api/persons/${id}`)
+                res.status(200).send(newPerson)
+                // redirect to created resource
+                //res.status(200).end()
+                //res.redirect(201, `/api/persons/`)
         }
 })
 
