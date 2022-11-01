@@ -13,28 +13,6 @@ morgan.token("body", (req, res) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'));
 const MAX_ID = 1000000
 
-let persons = [
-                { 
-                        "name": "Arto Hellas", 
-                        "number": "040-123456",
-                        "id": 1
-                },
-                { 
-                        "name": "Ada Lovelace", 
-                        "number": "39-44-5323523",
-                        "id": 2
-                },
-                { 
-                        "name": "Dan Abramov", 
-                        "number": "12-43-234345",
-                        "id": 3
-                },
-                { 
-                        "name": "Mary Poppendieck", 
-                        "number": "39-23-6423122",
-                        "id": 4
-                }
-        ]
 
 // info page; show number of entries
 app.get("/info", (req, res) => {
@@ -46,55 +24,86 @@ app.get("/info", (req, res) => {
 })
 // get all persons
 app.get("/api/persons", (req, res) => {
-	const persons = Person.find({})
-        res.json(persons)
+	Person.find({}).then(persons => {
+		res.status(200).json(persons.map(person => person.toJSON()))
+	})
 })
 // get a person by id
 app.get("/api/persons/:id", (req, res) => {
         const id = Number(req.params.id)
-	const person = Person.find({id: id})
-
-        if (person) {
-                res.json(person)
-        }
-        else {
-                res.status(404).end()
-        }
+	Person.find({id: id}).then(person => {
+		if (person) {
+			res.status(200).json(person.toJSON())
+		}
+		else {
+			res.status(404).end()
+		}
+	})
 })
 
 // delete a person by id
 app.delete("/api/persons/:id", (req, res) => {
-        const id = Number(req.params.id)
-	Person.deleteOne({_id: id})
+	Person.findByIdAndRemove(req.params.id).then(person => {
+		// 204 no content if delete is successful
+		res.status(204).end()
+	}).catch(error => {
+		console.log(error)
+	})
 
-        // 204 no content if delete is successful
-        res.status(204).end()
 })
 // create new person with random id
 app.post("/api/persons", (req, res) => {
         // name or number not supplied; return 400 bad request
+	// mandatory params not given
         if (!(req.body.name || req.body.number)) {
             res.status(400).send("name and number must be supplied")
         } 
-        // person already in the phonebook
-        else if (Person.find({name: {"$regex": req.body.name, "$options": "i"}})) {
-            res.status(400).send(`person ${req.body.name} already exists`)
-        }
-        // parameters ok, process the request
-        else {
-                const id = Math.floor(Math.random() * MAX_ID)
-                const newPerson = {
-                        "name": req.body.name,
-                        "number": req.body.number,
-                        "id": id
-                }
-		Person.save(newPerson)
+	else {
+		// person already in the phonebook
+		// note: find() returns [] while findOne returns null if nothing is found ...
+		Person.findOne({name: {"$regex": req.body.name, "$options": "i"}}).then(person => {
+		    if (person) {
+			    res.status(400).send(`person ${req.body.name} already exists`)
+		    }
+		})
 
-                res.status(200).send(newPerson)
-                // redirect to created resource
-                //res.redirect(201, `/api/persons/`)
-        }
+		// parameters ok, process the request
+		const newPerson = new Person({
+			"name": req.body.name,
+			"number": req.body.number,
+		})
+		newPerson.save().then(() => {
+			res.json(newPerson.toJSON())
+		}).catch(error => {
+			console.log(error)
+		})
+		// redirect to created resource
+		//res.redirect(201, `/api/persons/`)
+	}
 })
+// update a person's number
+app.put("/api/persons/:id", (req, res) => {
+	// mandatory params not given
+	if(!(req.body.name || req.body.number)) {
+		res.status(400).send("name and number must be supplied")
+	}
+	// parameters ok, try to find corresponding entry
+	else {
+		const updatedPerson = {
+			name: req.body.name,
+			number: req.body.number
+		}
+		Person.findByIdAndUpdate(req.params.id, updatedPerson).then(person => {
+			if (person) {
+				res.json(updatedPerson.toJSON())
+			}
+			else {
+				response.status(404).end()
+			}
+		})
+	}
+})
+
 
 
 const PORT = process.env.PORT || 5000
