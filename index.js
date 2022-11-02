@@ -36,8 +36,7 @@ app.get("/api/persons", (req, res, next) => {
 })
 // get a person by id
 app.get("/api/persons/:id", (req, res, next) => {
-	const id = Number(req.params.id)
-	Person.find({id: id}).then(person => {
+	Person.findById(req.params.id).then(person => {
 		if (person) {
 			res.status(200).json(person.toJSON())
 		}
