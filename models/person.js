@@ -10,8 +10,19 @@ mongoose.connect(url).then(result => {
 })
 
 const personSchema = new mongoose.Schema({
-	name: String,
-	number: String,
+	name: {
+		type:String,
+		minlength: 3,
+		required: true
+	},
+	// e.g. 050 000 0000 -> 9 digits
+	// +358 50 000 0000 -> 10 digits
+	// storing short form numbers probably isn't necessary
+	number: {
+		type: String,
+		minlength: 6,
+		required: true
+	}
 })
 
 // format the objects returned by mongoose
