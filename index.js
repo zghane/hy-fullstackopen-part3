@@ -14,23 +14,29 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :b
 const MAX_ID = 1000000
 
 
-// info page; show number of entries
+// info page; show number of entries in the database
 app.get("/info", (req, res) => {
-        const resString = `
-        <p>Phonebook has info for ${persons.length} people</p>
-        <p>${new Date()}</p>
-        `
-        res.send(200, resString)
+	Person.find({}).then(persons => {
+		const resString = `
+		<p>Phonebook has info for ${persons.length} people</p>
+		<p>${new Date()}</p>
+		`
+		res.send(200, resString)
+	}).catch(error => {
+		next(error)
+	})
 })
 // get all persons
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
 	Person.find({}).then(persons => {
 		res.status(200).json(persons.map(person => person.toJSON()))
+	}).catch(error => {
+		next(error)
 	})
 })
 // get a person by id
-app.get("/api/persons/:id", (req, res) => {
-        const id = Number(req.params.id)
+app.get("/api/persons/:id", (req, res, next) => {
+	const id = Number(req.params.id)
 	Person.find({id: id}).then(person => {
 		if (person) {
 			res.status(200).json(person.toJSON())
@@ -38,33 +44,35 @@ app.get("/api/persons/:id", (req, res) => {
 		else {
 			res.status(404).end()
 		}
+	}).catch(error => {
+		next(error)
 	})
 })
 
 // delete a person by id
-app.delete("/api/persons/:id", (req, res) => {
+app.delete("/api/persons/:id", (req, res, next) => {
 	Person.findByIdAndRemove(req.params.id).then(person => {
 		// 204 no content if delete is successful
 		res.status(204).end()
 	}).catch(error => {
-		console.log(error)
+		next(error)
 	})
 
 })
 // create new person with random id
-app.post("/api/persons", (req, res) => {
-        // name or number not supplied; return 400 bad request
+app.post("/api/persons", (req, res, next) => {
+	// name or number not supplied; return 400 bad request
 	// mandatory params not given
-        if (!(req.body.name || req.body.number)) {
-            res.status(400).send("name and number must be supplied")
-        } 
+	if (!(req.body.name || req.body.number)) {
+		res.status(400).send("name and number must be supplied")
+	} 
 	else {
 		// person already in the phonebook
 		// note: find() returns [] while findOne returns null if nothing is found ...
 		Person.findOne({name: {"$regex": req.body.name, "$options": "i"}}).then(person => {
-		    if (person) {
-			    res.status(400).send(`person ${req.body.name} already exists`)
-		    }
+			if (person) {
+				res.status(400).send(`person ${req.body.name} already exists`)
+			}
 		})
 
 		// parameters ok, process the request
@@ -75,14 +83,12 @@ app.post("/api/persons", (req, res) => {
 		newPerson.save().then(() => {
 			res.json(newPerson.toJSON())
 		}).catch(error => {
-			console.log(error)
+			next(error)
 		})
-		// redirect to created resource
-		//res.redirect(201, `/api/persons/`)
 	}
 })
-// update a person's number
-app.put("/api/persons/:id", (req, res) => {
+// update a person's number by id
+app.put("/api/persons/:id", (req, res, next) => {
 	// mandatory params not given
 	if(!(req.body.name || req.body.number)) {
 		res.status(400).send("name and number must be supplied")
@@ -93,20 +99,37 @@ app.put("/api/persons/:id", (req, res) => {
 			name: req.body.name,
 			number: req.body.number
 		}
-		Person.findByIdAndUpdate(req.params.id, updatedPerson).then(person => {
+		Person.findByIdAndUpdate(req.params.id, updatedPerson, {new: true}).then(person => {
 			if (person) {
-				res.json(updatedPerson.toJSON())
+				res.json(person.toJSON())
 			}
 			else {
 				response.status(404).end()
 			}
+		}).catch(error => {
+			next(error)
 		})
 	}
 })
 
+// error handler for api endpoints
+const errorHandler = (error, request, response, next) => {
+	console.error(error.message)
 
+	if (error.name === 'CastError') {
+		return response.status(400).send({ error: 'malformatted id' })
+	}
+	else if (error.name === "ValidationError") {
+		return response.status(400).json({error: error.message})
+	}
+
+	next(error)
+}
+
+// register error handler
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`)
+	console.log(`Server running on port ${PORT}`)
 })
